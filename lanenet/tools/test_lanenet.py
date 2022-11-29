@@ -17,6 +17,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
+import sys
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\config')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\data_provider')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\lanenet_model')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\tools')
+
 from lanenet_model import lanenet
 from lanenet_model import lanenet_postprocess
 from local_utils.config_utils import parse_config_utils

@@ -98,6 +98,8 @@ class Config(dict):
         :param config_file_path
         :return:
         """
+        #print(config_file_path)
+        #print(os.access(config_file_path, os.R_OK))
         if not os.access(config_file_path, os.R_OK):
             raise OSError('Config file: {:s}, can not be read'.format(config_file_path))
         with open(config_file_path, 'r') as f:
@@ -222,4 +224,5 @@ class Config(dict):
         return json.dump(origin_dict, f_obj)
 
 
-lanenet_cfg = Config(config_path='./config/tusimple_lanenet.yaml')
+#lanenet_cfg = Config(config_path='./config/tusimple_lanenet.yaml')
+lanenet_cfg = Config(config_path='C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\config\\tusimple_lanenet.yaml')

@@ -14,10 +14,19 @@ import os
 import os.path as ops
 import time
 
+import matplotlib.pyplot as plt
+
 import cv2
 import numpy as np
 import tensorflow as tf
 import tqdm
+
+import sys
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\config')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\data_provider')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\lanenet_model')
+sys.path.append('C:\\Users\\ray_s\\Desktop\\Navigation for Autonomous Systems\\Project\\aa275_project\\lanenet\\tools')
 
 from lanenet_model import lanenet
 from lanenet_model import lanenet_postprocess
@@ -74,7 +83,8 @@ def eval_lanenet(src_dir, weights_path, save_dir):
 
         saver.restore(sess=sess, save_path=weights_path)
 
-        image_list = glob.glob('{:s}/**/*.jpg'.format(src_dir), recursive=True)
+        #image_list = glob.glob('{:s}/**/*.jpg'.format(src_dir), recursive=True)
+        image_list = glob.glob('{:s}/**/*.png'.format(src_dir), recursive=True)
         avg_time_cost = []
         for index, image_path in tqdm.tqdm(enumerate(image_list), total=len(image_list)):
 
@@ -93,14 +103,20 @@ def eval_lanenet(src_dir, weights_path, save_dir):
             postprocess_result = postprocessor.postprocess(
                 binary_seg_result=binary_seg_image[0],
                 instance_seg_result=instance_seg_image[0],
-                source_image=image_vis
+                source_image=image_vis,
+                with_lane_fit=False
             )
+
+            #plt.imshow(binary_seg_image[0] * 255, cmap='gray')
+            #plt.show()
 
             if index % 100 == 0:
                 LOG.info('Mean inference time every single image: {:.5f}s'.format(np.mean(avg_time_cost)))
                 avg_time_cost.clear()
 
-            input_image_dir = ops.split(image_path.split('clips')[1])[0][1:]
+            #input_image_dir = ops.split(image_path.split('clips')[1])[0][1:]
+            input_image_dir = ops.split(image_path.split('img_data')[1])[0][1:]
+            print(input_image_dir)
             input_image_name = ops.split(image_path)[1]
             output_image_dir = ops.join(save_dir, input_image_dir)
             os.makedirs(output_image_dir, exist_ok=True)
@@ -108,7 +124,7 @@ def eval_lanenet(src_dir, weights_path, save_dir):
             if ops.exists(output_image_path):
                 continue
 
-            cv2.imwrite(output_image_path, postprocess_result['source_image'])
+            cv2.imwrite(output_image_path, binary_seg_image[0]*255)
 
     return
 

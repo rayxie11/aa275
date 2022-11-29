@@ -19,6 +19,7 @@ from sklearn.preprocessing import StandardScaler
 
 LOG = loguru.logger
 
+PATH = "C:/Users/ray_s/Desktop/Navigation for Autonomous Systems/Project/aa275_project/lanenet"
 
 def _morphological_process(image, kernel_size=5):
     """
@@ -255,7 +256,8 @@ class LaneNetPostProcessor(object):
     """
     lanenet post process for lane generation
     """
-    def __init__(self, cfg, ipm_remap_file_path='./data/tusimple_ipm_remap.yml'):
+    def __init__(self, cfg, ipm_remap_file_path=PATH+"/data/tusimple_ipm_remap.yml"):
+        
         """
 
         :param ipm_remap_file_path: ipm generate file path

@@ -1,0 +1,40 @@
+2022-11-28T15:39:00.121694-0800 INFO Mean inference time every single image: 0.31024s
+2022-11-28T15:39:09.870759-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:14.485575-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:14.904442-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:15.100523-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:15.284687-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:15.469569-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:15.673721-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:15.880482-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:16.110540-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:16.323601-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:16.532686-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:16.737314-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:17.107440-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:17.307495-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:17.579175-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:17.878791-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:18.118859-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:18.309913-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:18.497974-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:18.704045-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:19.265922-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:19.446963-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:21.122136-0800 INFO Mean inference time every single image: 0.08977s
+2022-11-28T15:39:24.467388-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:25.224058-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:25.804176-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:27.441762-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:27.616792-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:28.160674-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:28.704535-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:30.625181-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:37.119636-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:40.321515-0800 INFO Mean inference time every single image: 0.08583s
+2022-11-28T15:39:41.561350-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:53.079134-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:39:53.261942-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:40:04.274019-0800 INFO Mean inference time every single image: 0.08870s
+2022-11-28T15:40:09.652099-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
+2022-11-28T15:40:10.019478-0800 ERROR Found array with 0 sample(s) (shape=(0, 4)) while a minimum of 1 is required by StandardScaler.
