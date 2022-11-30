@@ -3,10 +3,16 @@ import os
 import pandas as pd
 import cv2
 from tqdm import tqdm
+from gpx_converter import Converter
+import matplotlib.pyplot as plt
 
 # Get directory
 current_dir = os.getcwd()
 par_dir = os.path.dirname(current_dir)
+
+# Binary image dimensions
+W = 512
+H = 256
 
 def lla_to_ecef(lat, lon, alt):
     """
@@ -40,13 +46,14 @@ def get_gps_data(file_loc):
 
     Returns
     xyz: np array of locations in cartesian coordinate system
+    alt: np array of altitude data
     """
     gps = pd.read_csv(file_loc)
     lat = gps.loc[:,"latitude"].to_numpy()
     lon = gps.loc[:,"longitude"].to_numpy()
     alt = gps.loc[:,"altitude"].to_numpy()
     xyz = lla_to_ecef(lat,lon,alt)
-    return xyz
+    return xyz, alt
 
 def remove_repeat_lane(img, lines, e=0.5):
     """
@@ -58,7 +65,7 @@ def remove_repeat_lane(img, lines, e=0.5):
     e: difference in theta for each lane extracted
 
     Returns
-    new_lines: trimmed lanes
+    new_lines: trimmed lanes, single line: [rho, theta, x1, y1, x2, y2]
     new_img: binary image with lanes added
     """
     new_lines = []
@@ -80,7 +87,7 @@ def remove_repeat_lane(img, lines, e=0.5):
         x2 = int(x0-1000*(-b))
         y2 = int(y0-1000*(a))
         cv2.line(new_img,(x1,y1),(x2,y2),(0,0,255),2)
-        line = [x1,y1,x2,y2]
+        line = [rho,theta,x1,y1,x2,y2]
         new_lines.append(line)
     return new_lines, new_img
 
@@ -103,7 +110,6 @@ def extract_lane(bi_file_loc, lane_len=50, e=0.5):
         img = cv2.imread(img_path)
         img_grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         lines = cv2.HoughLines(img_grey,1,np.pi/180,lane_len)
-        #print(lines.shape)
         if lines is None:
             lanes.append([])
             cv2.imwrite(par_dir+"/data/lane_bi_img_gen/"+bi_img_files[i], img)
@@ -112,3 +118,153 @@ def extract_lane(bi_file_loc, lane_len=50, e=0.5):
             cv2.imwrite(par_dir+"/data/lane_bi_img_gen/"+bi_img_files[i], new_img)
             lanes.append(new_lines)
     return lanes
+
+def get_google_data(file_loc, alt):
+    """
+    Returns GPS data from Google Maps data
+
+    Parameters
+    file_loc: Google gpx data file location
+    alt: altiude data from GPS data
+
+    Returns
+    xyz: np array of locations in cartesian coordinate system
+    """
+    data = Converter(input_file=file_loc).gpx_to_dictionary(latitude_key='latitude', longitude_key='longitude')
+    lat = np.array(data["latitude"])
+    lon = np.array(data["longitude"])
+    skip_step = int(len(lat)/len(lat))
+    new_alt = alt[:skip_step:]
+    xyz = lla_to_ecef(lat,lon,new_alt)
+    return xyz
+
+def find_horiz_intersect(x1, y1, x2, y2, y):
+    """
+    Find the intersection of given line with a horizontal line
+
+    Parameters
+    x1, y1, x2, y2: points specifying a line
+    y: horizontal line
+
+    Returns
+    x, y: intersection point coordinates
+    k, b: line parameters
+    """
+    k = (y2-y1)/(x2-x1)
+    b = y1-k*x1
+    x = (y-b)/k
+    return x, y, k ,b
+
+def find_line_intersection(k1, b1, k2, b2):
+    """
+    Find intersection between 2 lines
+
+    Parameters:
+    k1, b1: parameters for line 1
+    k2, b2: parameters for line 2
+
+    Returns
+    x, y: intersection coordinates
+    """
+    x = (b2-b1)/(k1-k2)
+    y = k1*x+b1
+    return x, y
+
+def angle_bisector_dist(int_x, int_y, left_x, left_y, right_x, right_y):
+    """
+    Find the length split of angle bisector for 2 intersecting lines
+
+    Parameters
+    int_x, int_y: intersection point coordinates
+    left_x, left_y: left lane intersection with bottom of image
+    right_x, right_y: right lane intersection with bottom of image
+
+    Returns
+    a: distance from left side of the lane to the center
+    b: distance from right side of the lane to the center
+
+    Notes
+    Using Angle Bisector Theorem a/b = x/y
+    """
+    x = np.linalg.norm(np.array([int_x,int_y])-np.array([left_x,left_y]))
+    y = np.linalg.norm(np.array([int_x,int_y])-np.array([right_x,right_y]))
+    tot_len = np.linalg.norm(np.array([left_x,left_y])-np.array([right_x,right_y]))
+    a = tot_len/(x+y)*x
+    b = tot_len-a
+    return a, b
+
+def find_dist_from_lane_sides(lane1, lane2):
+    """
+    Find distance from left and right side of the lane to its center
+
+    Parameters
+    lane1, lane2: lane parameters
+
+    Returns
+    center_lane_pos: center lane position
+    """
+    lane1_params = find_horiz_intersect(lane1[2],lane1[3],lane1[4],lane1[5],H)
+    lane2_params = find_horiz_intersect(lane2[2],lane2[3],lane2[4],lane2[5],H)
+    lane_intersection = find_line_intersection(lane1_params[2],lane1_params[3],lane2_params[2],lane2_params[3])
+    if lane1_params[0] > lane2_params[0]:
+        a, _ = angle_bisector_dist(lane_intersection[0],lane_intersection[1],lane2_params[0],lane2_params[1],lane1_params[0],lane1_params[1])
+        center_lane_pos = lane2_params[0]+a
+    else:
+        a, _ = angle_bisector_dist(lane_intersection[0],lane_intersection[1],lane1_params[0],lane1_params[1],lane2_params[0],lane2_params[1])
+        center_lane_pos = lane1_params[0]+a
+    return center_lane_pos
+
+def gen_relative_pos(lanes):
+    """
+    Generate relative positions of car with respect to lanes
+
+    Parameters
+    lanes: generated lanes
+
+    Returns
+    relative_dist: distance relative to the center lane
+
+    Notes
+    relative_dist > 0: car to the right of center lane
+    relative_dist <= 0: car to the left of the center lane
+    None: no center lane detected
+    """
+    camera_loc = W//2
+    theta_0 = 0
+    theta_90 = np.pi/2
+    relative_dist = []
+    for lane in lanes:
+        #print(lane)
+        if len(lane) <= 1:
+            relative_dist.append(None)
+            continue
+        lane = np.array(lane)
+        theta = lane[:,1]
+        diff_to_0 = np.abs(theta-theta_0)
+        diff_to_90 = np.abs(theta-theta_90)
+        keep_idx = np.union1d(np.where(diff_to_90 > 0.1),np.where(diff_to_0 > 0.1))
+        if len(keep_idx) != len(lane):
+            lane = lane[keep_idx]
+        if len(lane) <= 1:
+            relative_dist.append(None)
+            continue
+        if len(lane) == 2:
+            lane1 = lane[0]
+            lane2 = lane[1]
+            center_lane = find_dist_from_lane_sides(lane1,lane2)
+            deviation = center_lane-camera_loc
+        else:
+            potential_deviations = []
+            for i in range(len(lane)):
+                lane1 = lane[i]
+                for j in range(len(lane)):
+                    if i == j:
+                        continue
+                    lane2 = lane[j]
+                    center_lane = find_dist_from_lane_sides(lane1,lane2)
+                    potential_deviations.append(center_lane)
+            potential_deviations = np.array(potential_deviations)
+            min_diff_idx = np.argmin(np.abs(potential_deviations-camera_loc))
+            deviation = potential_deviations[min_diff_idx]-camera_loc
+        relative_dist.append(deviation)
+    return relative_dist
