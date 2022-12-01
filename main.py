@@ -26,6 +26,7 @@ xyz1,alt = get_gps_data(csv_data_dir+csv_file_name[0])
 
 # Extract Google Maps reference data
 xyz2 = get_google_data(google_maps_reference, alt)
+print(xyz2.shape)
 #plt.scatter(xyz2[:,0],xyz2[:,1])
 #plt.show()
 
@@ -36,10 +37,11 @@ xyz2 = get_google_data(google_maps_reference, alt)
 lanes = None
 with open("lanes_data", "rb") as fp:
     lanes = pickle.load(fp)
-print(len(lanes))
 
 x = gen_relative_pos(lanes)
 print(x)
+with open("deviation_from_center", "wb") as xp:
+    pickle.dump(x,xp)
 
 #print(xyz.shape)
 

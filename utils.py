@@ -5,6 +5,7 @@ import cv2
 from tqdm import tqdm
 from gpx_converter import Converter
 import matplotlib.pyplot as plt
+from gpx_interpolate import gpx_interpolate
 
 # Get directory
 current_dir = os.getcwd()
@@ -13,6 +14,9 @@ par_dir = os.path.dirname(current_dir)
 # Binary image dimensions
 W = 512
 H = 256
+
+# Lane width (in meters)
+LW = 3.5
 
 def lla_to_ecef(lat, lon, alt):
     """
@@ -133,9 +137,17 @@ def get_google_data(file_loc, alt):
     data = Converter(input_file=file_loc).gpx_to_dictionary(latitude_key='latitude', longitude_key='longitude')
     lat = np.array(data["latitude"])
     lon = np.array(data["longitude"])
-    skip_step = int(len(lat)/len(lat))
-    new_alt = alt[:skip_step:]
-    xyz = lla_to_ecef(lat,lon,new_alt)
+    target_size = len(alt)
+    gpx_data = {"lat":lat,
+                "lon":lon,
+                "ele":None,
+                "tstamp":None,
+                "tzinfo":None}
+    xy = gpx_interpolate(gpx_data,num=target_size)
+    new_lat = xy['lat']
+    new_lon = xy['lon']
+    xyz = lla_to_ecef(new_lat,new_lon,alt)
+    print(xyz.shape)
     return xyz
 
 def find_horiz_intersect(x1, y1, x2, y2, y):
@@ -234,7 +246,6 @@ def gen_relative_pos(lanes):
     theta_90 = np.pi/2
     relative_dist = []
     for lane in lanes:
-        #print(lane)
         if len(lane) <= 1:
             relative_dist.append(None)
             continue
@@ -254,6 +265,8 @@ def gen_relative_pos(lanes):
             center_lane = find_dist_from_lane_sides(lane1,lane2)
             deviation = center_lane-camera_loc
         else:
+            idx_sorted = np.argsort(theta)
+            lane = lane[idx_sorted]
             potential_deviations = []
             for i in range(len(lane)):
                 lane1 = lane[i]
@@ -266,5 +279,6 @@ def gen_relative_pos(lanes):
             potential_deviations = np.array(potential_deviations)
             min_diff_idx = np.argmin(np.abs(potential_deviations-camera_loc))
             deviation = potential_deviations[min_diff_idx]-camera_loc
-        relative_dist.append(deviation)
+        actual_deviation = deviation/W*LW
+        relative_dist.append(actual_deviation)
     return relative_dist
