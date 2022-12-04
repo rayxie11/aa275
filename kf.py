@@ -4,40 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from scipy.linalg import block_diag
-
-def quat2euler(q):
-    """Convert quaternion to Euler angles
-
-    Parameters
-    ----------
-    q : array-like (4)
-        Quaternion in form (qx, qy, qz, qw)
-    
-    Returns
-    -------
-    array-like (3)
-        x,y,z Euler angles in radians (extrinsic)
-
-    """
-    r = R.from_quat(q)
-    return r.as_euler('XYZ')
-
-def euler2quat(x, y, z):
-    """Convert Euler angles to quaternion
-    
-    Parameters
-    ----------
-    x, y, z : float
-        x,y,z Euler angles in radians (extrinsic)
-    
-    Returns
-    -------
-    array-like (4)
-        Quaternion in form (qx, qy, qz, qw)
-
-    """
-    r = R.from_euler('XYZ', [x, y, z])
-    return r.as_quat()
+from utils import *
 
 def blockdiag3(*args):
     """ Create a blockdiagonal matrix where block i is I_{3x3} * arg[i] """
