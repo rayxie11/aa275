@@ -90,10 +90,9 @@ def setup():
     plt.ion()
 
 
-
 def main():
     logging.info('Reading data ...')
-    meas = pd.read_csv('../data/measurements.csv').iloc[0:10000]
+    meas = pd.read_csv('../data/measurements.csv')
     gt   = pd.read_csv('../data/ground_truth.csv')
 
     logging.info('Creating EKF and simulator ...')
@@ -110,12 +109,12 @@ def main():
             
             sim.step()
 
-            if np.mod(step+1, num_steps // 100) == 0:
+            if np.mod(step+1, num_steps // 1000) == 0:
                 sim.visualize()
     
     logging.info('Simulation done')
     
-    sim.visualize(save=True)
+    sim.evaluate()
 
 if __name__ == '__main__':
     setup()

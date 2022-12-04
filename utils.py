@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import cv2
 from tqdm import tqdm
+from datetime import datetime
 from gpx_converter import Converter
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
@@ -17,7 +18,11 @@ W = 512
 H = 256
 
 # Lane width (in meters)
-LW = 3.5
+LW = 3.05
+
+# Local origin for Ford AV dataset
+ORIGIN_LAT, ORIGIN_LON, ORIGIN_ALT = 42.294319, -83.223275, 146.0
+
 
 def lla_to_ecef(lat, lon, alt):
     """
@@ -42,7 +47,7 @@ def lla_to_ecef(lat, lon, alt):
     ecef = np.array([x,y,z]).T
     return ecef
 
-def ecef2enu(x, y, z, lat_ref, lon_ref, alt_ref):
+def ecef2enu(x, y, z, lat_ref=ORIGIN_LAT, lon_ref=ORIGIN_LON, alt_ref=ORIGIN_ALT):
     """ECEF to ENU
     
     Convert ECEF (m) coordinates to ENU (m) about reference latitude (N°) and longitude (E°).
@@ -91,6 +96,9 @@ def ecef2enu(x, y, z, lat_ref, lon_ref, alt_ref):
     x, y, z = np.dot(C, np.array([x, y, z]) - ecef_ref)
 
     return x, y, z
+
+def lla2enu(lat, lon, alt):
+    return ecef2enu(*lla_to_ecef(lat, lon, alt), ORIGIN_LAT, ORIGIN_LON, ORIGIN_ALT)
 
 def quat2euler(q):
     """Convert quaternion to Euler angles
@@ -215,7 +223,6 @@ def get_google_data(file_loc, alt):
     new_lat = xy['lat']
     new_lon = xy['lon']
     xyz = lla_to_ecef(new_lat,new_lon,alt)
-    print(xyz.shape)
     return xyz
 
 def find_horiz_intersect(x1, y1, x2, y2, y):
@@ -350,3 +357,48 @@ def gen_relative_pos(lanes):
         actual_deviation = deviation/W*LW
         relative_dist.append(actual_deviation)
     return relative_dist
+
+def find_nearest_pos(road_x: np.ndarray, road_y: np.ndarray, 
+                     gps_x:  np.ndarray, gps_y:  np.ndarray):
+    """ 
+    For each point in (gps_x, gps_y), find the best match in all of (road_x, road_y).
+    Return a pd.DataFrame with the best match for each point.
+    """
+    road_x, road_y, gps_x, gps_y = np.array(road_x), np.array(road_y), np.array(gps_x), np.array(gps_y)
+    res = np.zeros((gps_x.shape[0], 2))
+    for i, (x0, y0) in enumerate(zip(gps_x, gps_y)):
+        if np.mod(i+1, gps_x.shape[0] // 10) == 0:
+            print(f'\033[A\33[2\r[{i+1}/{gps_x.shape[0]}]', end='')
+
+        delta_x = road_x-x0
+        delta_y = road_y-y0
+        dist2 = delta_x*delta_x + delta_y*delta_y
+        idx_min = np.argmin(dist2)
+        res[i, :] = road_x[idx_min], road_y[idx_min]
+    res = res.T
+    res = pd.DataFrame({'road_x':res[0], 'road_y':res[1]})
+    return res
+
+def find_nearest_time(gps_t: np.ndarray, cam_t: np.ndarray):
+    """ 
+    For each time in cam_t, find the best match in all of gps_t.
+    Return a pd.DataFrame with the ebst match for each point.
+    """
+    gps_t, cam_t = np.array(gps_t), np.array(cam_t)
+    res = np.zeros_like(cam_t)
+    for i, t0 in enumerate(cam_t):
+        delta_t = np.abs(gps_t - t0)
+        idx_min = np.argmin((delta_t))
+        res[i] = gps_t[idx_min]
+    res = pd.DataFrame({'time':res})
+    return res
+
+def get_datetime():
+    now = datetime.now()
+    y = str(now.year)[2:]
+    m = str(now.month).rjust(2,'0')
+    d = str(now.day).rjust(2,'0')
+    h = str(now.hour).rjust(2,'0')
+    min = str(now.minute).rjust(2,'0')
+    s = str(now.second).rjust(2,'0')
+    return y+m+d+'-h'+h+min+s

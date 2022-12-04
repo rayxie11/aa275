@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
+from scipy.linalg import block_diag
 
 def quat2euler(q):
     """Convert quaternion to Euler angles
@@ -99,7 +100,7 @@ class ExtendedKalmanFilter(object):
         self.P = blockdiag3(P0['pos'], P0['vel'], P0['acc'], P0['ang'], P0['ang_vel'])
         self.Q = None   # depends on sample time so is created in predict()
         self.F = None   # depends on sample time so is created in predict()
-        self.H_CAM     = np.hstack((np.zeros(1), np.ones(1), np.zeros(13)))
+        self.H_CAM     = np.hstack((np.eye(2), np.zeros((2, 13))))
         self.H_GPS_pos = np.hstack((np.eye(3), np.zeros((3, 12))))
         self.H_GPS_ang = np.hstack((np.zeros((3, 9)), np.eye(3), np.zeros((3, 3))))
         self.H_IMU     = np.vstack((np.zeros((3, 15)),                           # OBS: depends on measurements so is populated in self.update()
@@ -122,9 +123,12 @@ class ExtendedKalmanFilter(object):
         # Pick z, H, and R depending on which measurements are available
         zs, Hs, Rs = [], [], []
         if z['has_cam']:
-            zs.append(z['cam_pos_y'])
+            phi, varphi = self.x[10], self.x[11]
+            z_cam_x = z['road_x'] + ((((z['n_lanes']-1)/2)+z['curr_lane'])*z['LANEWIDTH'] + z['delta']) * np.cos(phi)*np.cos((np.pi/2)-varphi)
+            z_cam_y = z['road_y'] + ((((z['n_lanes']-1)/2)+z['curr_lane'])*z['LANEWIDTH'] + z['delta']) * np.cos(phi)*np.sin((np.pi/2)-varphi)
+            zs.extend([z_cam_x, z_cam_y])
             Hs.append(self.H_CAM)
-            Rs.append(self.R_dict['sigma2_CAM_pos'])
+            R_CAM = np.eye(2) * self.R_dict['sigma2_CAM_pos']
         if z['has_gps']:
             zs.extend(z[['gps_pos_x', 'gps_pos_y', 'gps_pos_z']].tolist())
             Hs.append(self.H_GPS_pos)
@@ -138,9 +142,11 @@ class ExtendedKalmanFilter(object):
             Hs.append(self.H_IMU)
             Rs.append(self.R_dict['sigma2_IMU_acc'])
             Rs.append(self.R_dict['sigma2_IMU_angvel'])
-        z = np.array(zs)
         self.H = np.vstack(Hs)
         self.R = blockdiag3(*Rs)
+        if z['has_cam']:
+            self.R = block_diag(R_CAM, self.R)
+        z = np.array(zs)
 
         # update
         K = np.matmul(np.matmul(self.P, self.H.T), np.linalg.inv(self.R + np.matmul(np.matmul(self.H, self.P), self.H.T)))
