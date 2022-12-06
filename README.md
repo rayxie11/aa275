@@ -13,3 +13,9 @@ This repository contains all the code for AA275 Final Project which uses GPS, ca
 `gpx_interpolate.py`: GPS data interpolation using piece-wise cubic Hermite splines 
 
 `utils.py`: utility functions for coordinate transformation, data extraction and preprocessing
+
+## Installation
+We recommend creating this work space within a virtual conda environment. The requirements are specified within `requirements.txt`. Use command 
+```
+pip3 install -r requirements.txt
+```
