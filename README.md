@@ -12,7 +12,7 @@ This repository contains all the code for AA275 Final Project which uses GPS, ca
 
 `gpx_interpolate.py`: GPS data interpolation using piece-wise cubic Hermite splines 
 
-`main.py`: main file contains all the function calls for EKF
+`main.py`: main execution file to calculate the positions
 
 `utils.py`: utility functions for coordinate transformation, data extraction and preprocessing
 
