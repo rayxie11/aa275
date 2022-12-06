@@ -16,6 +16,8 @@ This repository contains all the code for AA275 Final Project which uses GPS, ca
 
 `utils.py`: utility functions for coordinate transformation, data extraction and preprocessing
 
+`requirements.txt`: all required dependencies and packages
+
 ## Installation
 We recommend creating this work space within a virtual conda environment. The requirements are specified within `requirements.txt`. Use command ```pip3 install -r requirements.txt``` to install all the required dependencies. 
 
