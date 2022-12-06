@@ -12,10 +12,15 @@ This repository contains all the code for AA275 Final Project which uses GPS, ca
 
 `gpx_interpolate.py`: GPS data interpolation using piece-wise cubic Hermite splines 
 
+`main.py`: main file contains all the function calls for EKF
+
 `utils.py`: utility functions for coordinate transformation, data extraction and preprocessing
 
 ## Installation
-We recommend creating this work space within a virtual conda environment. The requirements are specified within `requirements.txt`. Use command 
-```
-pip3 install -r requirements.txt
-```
+We recommend creating this work space within a virtual conda environment. The requirements are specified within `requirements.txt`. Use command ```pip3 install -r requirements.txt``` to install all the required dependencies. 
+
+## Dataset
+All the datafiles should be constructed in the same directory as this repository. The Ford AV dataset can be downloaded from here: https://avdata.ford.com/home/default.aspx. The csv files are extracted from the Ford AV dataset rosbag files. Please refer to that repository for more detailed instructions: https://github.com/Ford/AVData.
+
+## Test
+Open `load_measurements.py`and run each cell one by one. Then, run `main.py` to see the sensor fusion results.
