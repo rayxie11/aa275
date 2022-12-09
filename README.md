@@ -10,9 +10,11 @@ This repository contains all the code for AA275 Final Project which uses GPS, ca
 
 `kf.py`: extended kalman filter object
 
+`sim.py`: simulator object, uses EKF object to simulate trajectory
+
 `gpx_interpolate.py`: GPS data interpolation using piece-wise cubic Hermite splines 
 
-`main.py`: main execution file to calculate the positions
+`main.py`: main execution file to calculate the positions of the vehicle during the trip, calls simulator in sim.py
 
 `utils.py`: utility functions for coordinate transformation, data extraction and preprocessing
 
