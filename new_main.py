@@ -35,7 +35,7 @@ def get_ekf_params(meas: pd.DataFrame):
     meas1 = meas.iloc[1]
     meas2 = meas.iloc[2]
 
-    theta0, phi0, varphi0 = quat2euler((0.004144869, 6.85e-5, 0.855333038, 0.518061975)) # TODO: is this right!
+    theta0, phi0, varphi0 = quat2euler((0.004144869, 6.85e-5, 0.855333038, 0.518061975))
 
     x0 = {
         'x': meas0['gps_pos_x'], 
@@ -71,7 +71,7 @@ def get_ekf_params(meas: pd.DataFrame):
         'angular': q22    # "The changes in velocity     over a sampling period T are of the order of sqrt(q22*T)"
     }
     
-    # Measurement noise covariance TODO
+    # Measurement noise covariance
     R = {
         'sigma2_CAM_pos':    3    ** 2,
         'sigma2_GPS_pos':    0.5  ** 2,
@@ -88,7 +88,6 @@ def setup():
     logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
 
     plt.ion()
-
 
 def main():
     logging.info('Reading data ...')
@@ -108,13 +107,14 @@ def main():
                 progbar.update()
             
             sim.step()
+            sim.evaluate()
 
             if np.mod(step+1, num_steps // 1000) == 0:
                 sim.visualize()
     
     logging.info('Simulation done')
     
-    sim.evaluate()
+    sim.evaluate(final=True)
 
 if __name__ == '__main__':
     setup()

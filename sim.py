@@ -38,21 +38,20 @@ class FigTrajectory(object):
 
         self.figure.canvas.draw()
         self.figure.canvas.flush_events()
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 class Simulator(object):
     def __init__(self,
                  ekf:  ExtendedKalmanFilter,
                  measurements: pd.DataFrame,
                  ground_truth: pd.DataFrame):
-        # measurements should have the columns [frame_id, time_nsecs, 6 measurements from GPS (can be NaN), 1 measurement from CAM (can be NaN), 6 measurements from IMU (can be NaN)]
-        # ground_truth should have the columns [frame_id, time_nsecs, x_true (can be NaN), y_true (can be NaN), z_true (can be NaN)]
-        # All frame_id and time_nsecs that is present in measurements must be present in ground_truth, and vice versa!
+
         self.ekf = ekf
         self.trajectory = pd.DataFrame(columns={'time', 'x', 'y', 'z'})
         self.trajectory_fig = FigTrajectory()
         self.z = measurements
         self.gt = ground_truth
+        self.error_xy = pd.DataFrame(columns={'time', 'error_xy'})
 
         self.current_index = -1
         self.last_time_nsecs = None
@@ -78,17 +77,35 @@ class Simulator(object):
         """ Plot current trajectory """
         self.trajectory_fig.update(self.trajectory['x'], self.trajectory['y'], self.trajectory['time'])
     
-    def evaluate(self, fig_handle=None):
+    def evaluate(self, final=False):
         """ Calculate performance metrics and plot final trajectory """
-        # calculate performance metrics TODO
+        # calculate performance metrics
+        if len(self.trajectory) > 0:
+            latest_estimate = self.trajectory.loc[len(self.trajectory)-1]
+            closest_time = (self.gt['time'] - latest_estimate['time']).abs().argmin()
+            closest_gt = self.gt.iloc[closest_time]
+            if closest_time < 1e8: # 0.1 s
+                error_x = np.abs(latest_estimate['x'] - closest_gt['x_gt'])
+                error_y = np.abs(latest_estimate['y'] - closest_gt['y_gt'])
+                error_xy = np.sqrt(error_x**2 + error_y**2)
+                self.error_xy.loc[len(self.error_xy.index)] = pd.Series({'time':latest_estimate['time'], 'error_xy':error_xy})
 
-        # save trajectory 
-        foldername = get_datetime()
-        subprocess.call(f'mkdir output\{foldername}', shell=True)
-        self.trajectory.to_csv(f'output/{foldername}/trajectory.csv')
+        if final:
+            # save trajectory 
+            foldername = get_datetime()
+            subprocess.call(f'mkdir output\{foldername}', shell=True)
+            self.trajectory.to_csv(f'output/{foldername}/trajectory.csv')
 
-        # show final trajectory
-        plt.ioff()
-        self.visualize()
-        plt.savefig(f'output/{foldername}/trajectory.png')
-        plt.show()
+            # show final trajectory
+            plt.ioff()
+            self.visualize()
+            plt.savefig(f'output/{foldername}/trajectory.png')
+            plt.show()
+
+            # plot final error_xy
+            plt.figure()
+            plt.plot(self.error_xy['time'], self.error_xy['error_xy'])
+            plt.savefig(f'output/{foldername}/error_xy.png')
+            plt.show()
+            mean_error = self.error_xy['error_xy'].mean()
+            print(f'Mean error: {mean_error:.2f} m')
