@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from scipy.linalg import block_diag
-from pprint import pprint
 
 def blockdiag3(*args):
     """ Create a blockdiagonal matrix where block i is I_{3x3} * arg[i] """

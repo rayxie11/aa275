@@ -5,7 +5,6 @@ import cv2
 from tqdm import tqdm
 from datetime import datetime
 from gpx_converter import Converter
-import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from gpx_interpolate import gpx_interpolate
 
@@ -116,7 +115,24 @@ def quat2euler(q):
     """
     r = R.from_quat(q)
     return r.as_euler('XYZ')
+
+def euler2quat(x, y, z):
+    """Convert Euler angles to quaternion
     
+    Parameters
+    ----------
+    x, y, z : float
+        x,y,z Euler angles in radians (extrinsic)
+    
+    Returns
+    -------
+    array-like (4)
+        Quaternion in form (qx, qy, qz, qw)
+
+    """
+    r = R.from_euler('XYZ', [x, y, z])
+    return r.as_quat()
+
 def get_gps_data(file_loc):
     """
     Returns GPS data from file
