@@ -1,49 +1,121 @@
-import os
-import pandas as pd
+import subprocess
+subprocess.call('cls', shell=True)
+
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-import pickle 
+import logging
+from tqdm import tqdm
 
-from utils import *
-
-# Get data directory
-current_dir = os.getcwd()
-par_dir = os.path.dirname(current_dir)
-csv_data_dir = par_dir+"/data/csv_data"
-img_data_dir = par_dir+"/data/img_data"
-bi_dir = par_dir+"/data/bi_img_data"
-google_maps_reference = par_dir+"/data/map_to_gpx.gpx"
-
-# csv data file needed
-csv_file_name = ["/gps.csv", "/imu.csv", "/pose_localized.csv"]
-
-# Extract GPS data
-xyz1,alt = get_gps_data(csv_data_dir+csv_file_name[0])
-
-# Plot GPS data
-#plt.scatter(xyz1[:,0],xyz1[:,1])
+from sim import Simulator
+from kf import ExtendedKalmanFilter
+from utils import quat2euler
 
 
-# Extract Google Maps reference data
-xyz2 = get_google_data(google_maps_reference, alt)
-print(xyz2.shape)
-#plt.scatter(xyz2[:,0],xyz2[:,1])
-#plt.show()
+def estimate_process_noise(meas: pd.DataFrame):
+    """ Estimate the intensity of the process noise. 
+    Based on comments from Bar-Shalom et. al. chapter 6 
+    Estimation with Applications to Tracking and Navigation: Theory, Algorithms and Software, 2001 """
+    # "The changes in acceleration       over a sampling period T are of the order of sqrt(q33*T)"
+    # "The changes in (angluar) velocity over a sampling period T are of the order of sqrt(q22*T)"
+    
+    delta_t = (meas['time'].diff() * 1e-9).mean()
 
-# Extract lanes from binary images
-#lanes = extract_lane(bi_dir, lane_len=40, e=0.5)
-#with open("lanes_data", "wb") as fp:
-    #pickle.dump(lanes,fp)
-lanes = None
-with open("lanes_data", "rb") as fp:
-    lanes = pickle.load(fp)
+    delta_a = meas['imu_lin_acc_x'].diff().apply(abs).mean()
+    q33 = delta_a**2 / delta_t
 
-x = gen_relative_pos(lanes)
-print(x)
-with open("deviation_from_center", "wb") as xp:
-    pickle.dump(x,xp)
+    delta_ang_v = meas['imu_ang_vel_x'].diff().apply(abs).mean()
+    q22 = delta_ang_v**2 / delta_t
 
-#print(xyz.shape)
+    return q22, q33
 
-# Get lanes from image data
-#img = cv2.imread(img_data_dir+"/1508987519235232.png")
+def get_ekf_params(meas: pd.DataFrame):
+    # initial state
+    meas0 = meas.iloc[0]
+    meas1 = meas.iloc[1]
+    meas2 = meas.iloc[2]
+
+    theta0, phi0, varphi0 = quat2euler((0.004144869, 6.85e-5, 0.855333038, 0.518061975))
+
+    x0 = {
+        'x': meas0['gps_pos_x'], 
+        'y': meas0['gps_pos_y'],
+        'z': meas0['gps_pos_z'],
+        'x_d': (meas1['gps_pos_x'] - meas0['gps_pos_x']) / ((meas1['time'] - meas0['time'])*1e-9),
+        'y_d': (meas1['gps_pos_y'] - meas0['gps_pos_y']) / ((meas1['time'] - meas0['time'])*1e-9),
+        'z_d': (meas1['gps_pos_z'] - meas0['gps_pos_z']) / ((meas1['time'] - meas0['time'])*1e-9),
+        'x_dd': 0, 
+        'y_dd': 0, 
+        'z_dd': 0, 
+        'theta': theta0,
+        'phi': phi0,
+        'varphi': varphi0,
+        'theta_d':  meas0['imu_ang_vel_x'],
+        'phi_d':    meas0['imu_ang_vel_y'],
+        'varphi_d': meas0['imu_ang_vel_z']
+    }
+    
+    # initial covariance
+    P0 = {
+        'pos':      100 ** 2,
+        'vel':      30 ** 2,
+        'acc':      10 ** 2,
+        'ang':      6 **2,
+        'ang_vel' : 6 **2
+    }
+    
+    # process noise intensity
+    q22, q33 = estimate_process_noise(meas)
+    q = {
+        'linear':  q33,    # "The changes in acceleration over a sampling period T are of the order of sqrt(q33*T)"
+        'angular': q22    # "The changes in velocity     over a sampling period T are of the order of sqrt(q22*T)"
+    }
+    
+    # Measurement noise covariance
+    R = {
+        'sigma2_CAM_pos':    3    ** 2,
+        'sigma2_GPS_pos':    0.5  ** 2,
+        'sigma2_GPS_ang':    0.5  ** 2,
+        'sigma2_IMU_acc':    0.5  ** 2,
+        'sigma2_IMU_angvel': 0.01 ** 2,
+    }
+
+    return x0, P0, q, R
+
+def setup():
+    logging.basicConfig(level=logging.DEBUG,
+                        format='[%(asctime)s.%(msecs)03d] - %(message)s', datefmt='%H:%M:%S')
+    logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
+
+    plt.ion()
+
+def main():
+    logging.info('Reading data ...')
+    meas = pd.read_csv('../data/measurements.csv')
+    gt   = pd.read_csv('../data/ground_truth.csv')
+
+    logging.info('Creating EKF and simulator ...')
+    x0, P0, q, R = get_ekf_params(meas)
+    ekf  = ExtendedKalmanFilter(x0, P0, q, R)
+    sim  = Simulator(ekf, meas, gt)
+
+    logging.info('Starting simulation')
+    num_steps = len(meas.index)
+    with tqdm(range(1000)) as progbar:
+        for step in range(num_steps):
+            if np.mod(step+1, num_steps // 1000) == 0:
+                progbar.update()
+            
+            sim.step()
+            sim.evaluate()
+
+            if np.mod(step+1, num_steps // 1000) == 0:
+                sim.visualize()
+    
+    logging.info('Simulation done')
+    
+    sim.evaluate(final=True)
+
+if __name__ == '__main__':
+    setup()
+    main()
